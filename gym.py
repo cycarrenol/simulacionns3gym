@@ -33,7 +33,7 @@ debug = False
 
 env = ns3env.Ns3Env(port=port, stepTime=stepTime, startSim=startSim, simSeed=seed, simArgs=simArgs, debug=debug)
 # simpler:
-#env = ns3env.Ns3Env()
+env = ns3env.Ns3Env()
 env.reset()
 
 ob_space = env.observation_space

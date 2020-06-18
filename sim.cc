@@ -189,9 +189,9 @@ main (int argc, char *argv[]){
   uint32_t sourceNode = 24;
   double interval = 1.0; // seconds
   bool verbose = false;
-  bool tracing = false;
+  bool tracing = true;
   
-  srand(time(NULL));
+  //srand(time(NULL));
   // Parameters of the scenario
   uint32_t simSeed = 1;
   double simulationTime = 200; //seconds
@@ -321,8 +321,6 @@ main (int argc, char *argv[]){
  olsr.PrintRoutingTableAllEvery (Seconds (2), routingStream);
  Ptr<OutputStreamWrapper> neighborStream = Create<OutputStreamWrapper> ("sim.neighbors", std::ios::out);
  olsr.PrintNeighborCacheAllEvery (Seconds (2), neighborStream);
-
- NS_LOG_INFO ("****************************************** Punto de control antes del agente ******************************************");
 
   // OpenGym Env  
   Ptr<OpenGymInterface> openGym = CreateObject<OpenGymInterface> (openGymPort);

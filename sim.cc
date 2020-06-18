@@ -95,7 +95,7 @@ Define reward function
 float MyGetReward(void)
 {
   float prevDiff = 0.0;   
-  for( uint32_t c = 0; c < 4; ++ c )
+  for( uint32_t c = 0; c < NUM_CHANNELS; ++ c )
   {
     float prevAvg = 0.0;
     if( c == selected_channel )

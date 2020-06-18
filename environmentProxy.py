@@ -5,12 +5,6 @@ import gym
 import argparse
 from ns3gym import ns3env
 
-__author__ = "Piotr Gawlowicz"
-__copyright__ = "Copyright (c) 2018, Technische Universität Berlin"
-__version__ = "0.1.0"
-__email__ = "gawlowicz@tkn.tu-berlin.de"
-
-
 parser = argparse.ArgumentParser(description='Start simulation script on/off')
 parser.add_argument('--start',
                     type=int,
@@ -34,7 +28,6 @@ debug = False
 
 env = ns3env.Ns3Env(port=port, stepTime=stepTime, startSim=startSim, simSeed=seed, simArgs=simArgs, debug=debug)
 # simpler:
-# env = ns3env.Ns3Env()
 env.reset()
 
 ob_space = env.observation_space

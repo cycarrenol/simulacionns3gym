@@ -61,12 +61,12 @@ Define game over condition
 bool MyGetGameOver(void)
 {
   uint32_t total = 0;
-  for( uint32_t c = 0; c < 4; ++ c )
+  for( uint32_t c = 0; c < NUM_CHANNELS; ++ c )
     total += channelCounter[c];
 
   float diff = 0.0;
 
-  for( uint32_t c = 0; c < 4; ++ c )
+  for( uint32_t c = 0; c < NUM_CHANNELS; ++ c )
     diff += fabs( EXPECTED_PERCENTAGES[c] - percentage[c] );
 
   return total > 100 && diff > 0.5;
@@ -183,9 +183,9 @@ main (int argc, char *argv[]){
   double distance = 500;
   uint32_t packetSize = 1000; // bytes
   uint32_t numPackets = 1;
-  uint32_t numNodes = 25;  // by default
+  uint32_t numNodes = 25;
 
-  uint32_t sinkNode = 0;  // by default
+  uint32_t sinkNode = 0; 
   uint32_t sourceNode = 24;
   double interval = 1.0; // seconds
   bool verbose = false;
@@ -197,7 +197,7 @@ main (int argc, char *argv[]){
   double simulationTime = 200; //seconds
   double envStepTime = 0.1; //seconds, ns3gym env step time interval
   uint32_t openGymPort = 5555;
-  uint32_t testArg = 0;
+  uint32_t gymArg = 0;
 
   CommandLine cmd;
   // required parameters for OpenGym interface
@@ -205,7 +205,7 @@ main (int argc, char *argv[]){
   cmd.AddValue ("simSeed", "Seed for random generator. Default: 1", simSeed);
   // optional parameters
   cmd.AddValue ("simTime", "Simulation time in seconds. Default: 10s", simulationTime);
-  cmd.AddValue ("testArg", "Extra simulation argument. Default: 0", testArg);
+  cmd.AddValue ("gymArg", "Extra simulation argument. Default: 0", gymArg);
 
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);
   cmd.AddValue ("packetSize", "size of application packet sent", packetSize);
@@ -229,13 +229,13 @@ main (int argc, char *argv[]){
   NS_LOG_UNCOND("--openGymPort: " << openGymPort);
   NS_LOG_UNCOND("--envStepTime: " << envStepTime);
   NS_LOG_UNCOND("--seed: " << simSeed);
-  NS_LOG_UNCOND("--testArg: " << testArg);
+  NS_LOG_UNCOND("--gymArg: " << gymArg);
 
   RngSeedManager::SetSeed (1);
   RngSeedManager::SetRun (simSeed);
   
-  NodeContainer c;
-  c.Create (numNodes);
+  NodeContainer nodeContainer;
+  nodeContainer.Create (numNodes);
 
   // The below set of helpers will help us to put together the wifi NICs we want
   WifiHelper wifi;
@@ -262,7 +262,7 @@ main (int argc, char *argv[]){
                                 "ControlMode",StringValue (phyMode));
   // Set it to adhoc mode
   wifiMac.SetType ("ns3::AdhocWifiMac");
-  NetDeviceContainer devices = wifi.Install (wifiPhy, wifiMac, c);
+  NetDeviceContainer devices = wifi.Install (wifiPhy, wifiMac, nodeContainer); 
 
   MobilityHelper mobility;
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
@@ -273,7 +273,7 @@ main (int argc, char *argv[]){
                                  "GridWidth", UintegerValue (5),
                                  "LayoutType", StringValue ("RowFirst"));
   mobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
-  mobility.Install (c);
+  mobility.Install (nodeContainer);
 
   // Enable OLSR
   OlsrHelper olsr;
@@ -285,7 +285,7 @@ main (int argc, char *argv[]){
 
   InternetStackHelper internet;
   internet.SetRoutingHelper (list); // has effect on the next Install ()
-  internet.Install (c);
+  internet.Install (nodeContainer);
 
   Ipv4AddressHelper ipv4;
   NS_LOG_INFO ("Assign IP Addresses.");
@@ -297,34 +297,32 @@ main (int argc, char *argv[]){
   // set the nodes different to sourceNode as sink nodes
   for(uint32_t s = 0 ; s <numNodes;s++){
     if(s == sourceNode)continue;
-    Ptr<Socket> recvSink = Socket::CreateSocket (c.Get (s), tid);
+    Ptr<Socket> recvSink = Socket::CreateSocket (nodeContainer.Get (s), tid);
     InetSocketAddress local = InetSocketAddress (Ipv4Address::GetAny (), 80);
     recvSink->Bind (local);
     recvSink->SetRecvCallback (MakeCallback (&ReceivePacket));
   }
 
-  Ptr<Socket> recvSink = Socket::CreateSocket (c.Get (sinkNode), tid);
+  Ptr<Socket> recvSink = Socket::CreateSocket (nodeContainer.Get (sinkNode), tid);
   InetSocketAddress local = InetSocketAddress (Ipv4Address::GetAny (), 80);
   recvSink->Bind (local);
   recvSink->SetRecvCallback (MakeCallback (&ReceivePacket));
 
-  Ptr<Socket> source = Socket::CreateSocket (c.Get (sourceNode), tid);
+  Ptr<Socket> source = Socket::CreateSocket (nodeContainer.Get (sourceNode), tid);
   InetSocketAddress remote = InetSocketAddress (i.GetAddress (sinkNode, 0), 80);
   source->Connect (remote);
 
-  if (tracing == true)
-    {
-      AsciiTraceHelper ascii;
-      wifiPhy.EnableAsciiAll (ascii.CreateFileStream ("wifi-simple-adhoc-grid.tr"));
-      wifiPhy.EnablePcap ("wifi-simple-adhoc-grid", devices);
-      // Trace routing tables
-      Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> ("wifi-simple-adhoc-grid.routes", std::ios::out);
-      olsr.PrintRoutingTableAllEvery (Seconds (2), routingStream);
-      Ptr<OutputStreamWrapper> neighborStream = Create<OutputStreamWrapper> ("wifi-simple-adhoc-grid.neighbors", std::ios::out);
-      olsr.PrintNeighborCacheAllEvery (Seconds (2), neighborStream);
+ // Trace
+ AsciiTraceHelper ascii;
+ wifiPhy.EnableAsciiAll (ascii.CreateFileStream ("sim.tr"));
+ wifiPhy.EnablePcap ("simNode", devices);
+ // Trace routing tables
+ Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> ("sim.routes", std::ios::out);
+ olsr.PrintRoutingTableAllEvery (Seconds (2), routingStream);
+ Ptr<OutputStreamWrapper> neighborStream = Create<OutputStreamWrapper> ("sim.neighbors", std::ios::out);
+ olsr.PrintNeighborCacheAllEvery (Seconds (2), neighborStream);
 
-      // To do-- enable an IP-level trace that shows forwarding events only
-    }
+ NS_LOG_INFO ("****************************************** Punto de control antes del agente ******************************************");
 
   // OpenGym Env  
   Ptr<OpenGymInterface> openGym = CreateObject<OpenGymInterface> (openGymPort);

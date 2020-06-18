@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import gym
 import argparse
 from ns3gym import ns3env
 
@@ -28,7 +29,7 @@ simTime = 20 # seconds
 stepTime = 0.5  # seconds
 seed = 0
 simArgs = {"--simTime": simTime,
-           "--testArg": 123}
+           "--gymArg": 123}
 debug = False
 
 env = ns3env.Ns3Env(port=port, stepTime=stepTime, startSim=startSim, simSeed=seed, simArgs=simArgs, debug=debug)
